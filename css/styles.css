@@ -1,0 +1,4 @@
+body { font-family: 'Poppins', sans-serif; }
+.card { transition: transform 0.2s ease-in-out; }
+.card:hover { transform: scale(1.03); }
+.btn-lg { border-radius: 12px; }
