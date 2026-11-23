@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Costo Puesto</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra de pestañas tipo manifiesto de carga arriba; cada vista es una hoja de trabajo con resumen primero y detalle después */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --sunk:#e3e8ed; --ink:#14212e; --muted:#5a6b7b; --line:#cdd5dd;
+  --accent:#e2541b; --accent-ink:#ffffff; --steel:#1f4e6e;
+  --ok:#1d7a4c; --warn:#b7791f; --bad:#b42318;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f161d; --surface:#17212b; --sunk:#1e2a36; --ink:#e6edf3; --muted:#93a4b4; --line:#2b3a48;
+  --accent:#f26a33; --accent-ink:#140a05; --steel:#6fa8cf; --ok:#4cc38a; --warn:#e3a94a; --bad:#f07167; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161d; --surface:#17212b; --sunk:#1e2a36; --ink:#e6edf3; --muted:#93a4b4; --line:#2b3a48;
+  --accent:#f26a33; --accent-ink:#140a05; --steel:#6fa8cf; --ok:#4cc38a; --warn:#e3a94a; --bad:#f07167; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--ink);color:var(--bg)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) header.top{background:#080d12}}
+:root[data-theme="dark"] header.top{background:#080d12}
+.bar{display:flex;align-items:center;gap:16px;padding-block:12px;flex-wrap:wrap}
+.brand{font-family:var(--f-display);font-weight:800;font-size:20px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;color:#fff}
+.brand i{display:inline-block;width:22px;height:14px;background:var(--accent);border-radius:2px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.18);background-image:repeating-linear-gradient(90deg,transparent 0 3px,rgba(0,0,0,.22) 3px 4px)}
+.brand small{font-family:var(--f-mono);font-weight:400;font-size:11px;color:#9fb0c0;letter-spacing:.08em;text-transform:uppercase}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;margin-left:auto;scrollbar-width:none}
+nav.tabs a{color:#c4d0db;text-decoration:none;font-size:13px;font-weight:500;padding:7px 12px;border-radius:6px;white-space:nowrap}
+nav.tabs a:hover{color:#fff;background:rgba(255,255,255,.08)}
+nav.tabs a[aria-current="page"]{background:var(--accent);color:#fff}
+main{padding-block:24px 64px}
+h1,h2,h3{font-family:var(--f-display);letter-spacing:-.015em;text-wrap:balance;margin:0}
+h1{font-size:28px;font-weight:800}
+h2{font-size:18px;font-weight:700}
+h3{font-size:15px;font-weight:700}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lead{color:var(--muted);max-width:68ch;margin:6px 0 0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g2{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+@media (max-width:900px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g2{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.panel>h2,.panel>h3{margin-bottom:12px}
+.kpi .v{font-family:var(--f-mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums;margin-top:4px;overflow-wrap:anywhere}
+.kpi .s{font-size:12px;color:var(--muted)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mono{font-family:var(--f-mono);font-size:12.5px}
+.muted{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:var(--sunk);white-space:nowrap}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.st-0{color:var(--muted)}.st-1{color:var(--steel)}.st-2{color:var(--warn)}.st-3{color:var(--steel)}.st-4{color:var(--bad)}.st-5{color:var(--ok)}
+.low{color:var(--bad);font-weight:600}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:500;color:var(--muted);min-width:0}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:8px 10px;width:100%;min-width:0}
+input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[type=number]{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.btn{font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--steel)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{filter:brightness(1.06)}
+.btn.sm{padding:4px 10px;font-size:12.5px}
+.btn.ghost{background:transparent}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:16px}
+.items td input{padding:6px 8px;font-size:13px}
+.breakdown{display:flex;height:14px;border-radius:4px;overflow:hidden;background:var(--sunk);margin:10px 0 12px}
+.breakdown span{height:100%}
+.legend{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;font-size:13px;align-items:center}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);margin-top:12px;padding-top:10px;font-weight:600}
+.total .num{font-size:20px}
+.factor{font-family:var(--f-mono);font-size:12px;background:var(--sunk);padding:2px 8px;border-radius:5px}
+.pipe{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+@media (max-width:700px){.pipe{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.pipe div{border-top:3px solid currentColor;padding-top:6px}
+.pipe b{display:block;font-family:var(--f-mono);font-size:20px;font-weight:500;color:var(--ink)}
+.pipe span{font-size:12px}
+.sizes{display:flex;flex-wrap:wrap;gap:4px}
+.sizes span{font-family:var(--f-mono);font-size:11.5px;background:var(--sunk);border-radius:4px;padding:1px 6px}
+.sizes span.z{opacity:.45;text-decoration:line-through}
+.notice{font-size:12.5px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:8px 12px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:13.5px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+textarea{font-family:var(--f-mono);font-size:12.5px;min-height:220px;resize:vertical}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bars .b{display:grid;grid-template-columns:110px 1fr 90px;gap:10px;align-items:center;font-size:13px}
+.bars .t{height:10px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.bars .t span{display:block;height:100%;background:var(--steel)}
+.bars .b:first-child .t span{background:var(--accent)}
+.confirm{display:inline-flex;gap:6px;align-items:center;font-size:12.5px}
+@media (prefers-reduced-motion:no-preference){.view{animation:in .18s ease-out}@keyframes in{from{transform:translateY(4px)}to{transform:none}}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap bar">
+    <div class="brand"><i aria-hidden="true"></i>Costo Puesto <small>para importadores</small></div>
+    <nav class="tabs" id="tabs">
+      <a href="#resumen">Resumen</a>
+      <a href="#cotizador">Cotizador</a>
+      <a href="#pedidos">Importaciones</a>
+      <a href="#inventario">Inventario</a>
+      <a href="#ventas">Ventas</a>
+      <a href="#catalogo">Catálogo</a>
+      <a href="#ajustes">Ajustes</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap" id="app"></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const KEY="costo-puesto-v1";
+const ESTADOS=["Cotizado","Pagado","En producción","Embarcado","En aduana","En bodega"];
+const CATS=["Zapatillas","Gorras","Medias","Cuidado","Mochilas","Accesorios"];
+
+function sample(){
+  return {
+    demo:true,
+    cfg:{empresa:"Mi Importadora",moneda:"COP",trm:4050,arancel:15,iva:19,ivaDescontable:true,margen:45,minStock:3,whatsapp:"+57 300 000 0000"},
+    pedidos:[
+      {id:"p1",codigo:"IMP-2611-01",proveedor:"Jinjiang Sports Co.",incoterm:"FOB",estado:1,eta:"2026-12-28",tracking:"",tc:4050,arancel:15,iva:19,
+       flete:1450,seguro:85,agente:1800000,fleteLocal:650000,otros:300000,
+       items:[{sku:"ZP-RUN-BK",nombre:"Zapatilla running negra",cat:"Zapatillas",fob:14.5,tallas:"38:10,39:15,40:20,41:20,42:15,43:10"},
+              {sku:"ZP-CLS-WH",nombre:"Zapatilla clásica blanca",cat:"Zapatillas",fob:12.8,tallas:"36:10,37:15,38:15,39:15,40:15,41:10"},
+              {sku:"GR-TRK-NV",nombre:"Gorra trucker azul",cat:"Gorras",fob:2.1,tallas:"U:200"}]},
+      {id:"p2",codigo:"IMP-2610-02",proveedor:"Yiwu Accessories Ltd.",incoterm:"FOB",estado:4,eta:"2026-11-30",tracking:"MSKU 482193-0",tc:4020,arancel:10,iva:19,
+       flete:620,seguro:30,agente:950000,fleteLocal:280000,otros:120000,
+       items:[{sku:"MD-PRO-3P",nombre:"Medias deportivas x3",cat:"Medias",fob:1.35,tallas:"U:600"},
+              {sku:"CD-PLN-12",nombre:"Kit limpieza zapatillas",cat:"Cuidado",fob:2.4,tallas:"U:250"},
+              {sku:"CR-FLT-WH",nombre:"Cordones planos blancos",cat:"Accesorios",fob:0.35,tallas:"U:800"}]}
+    ],
+    inventario:[
+      {sku:"ZP-RUN-GR",nombre:"Zapatilla running gris",cat:"Zapatillas",costo:96400,precio:189900,stock:{"38":1,"39":4,"40":6,"41":2,"42":0,"43":1}},
+      {sku:"ZP-CNV-BK",nombre:"Zapatilla lona negra",cat:"Zapatillas",costo:61800,precio:129900,stock:{"36":3,"37":5,"38":6,"39":4,"40":2}},
+      {sku:"MB-URB-BK",nombre:"Mochila urbana negra",cat:"Mochilas",costo:38500,precio:89900,stock:{"U":24}},
+      {sku:"GR-SNP-BK",nombre:"Gorra snapback negra",cat:"Gorras",costo:11200,precio:34900,stock:{"U":2}},
+      {sku:"CD-SPR-01",nombre:"Spray impermeabilizante",cat:"Cuidado",costo:9800,precio:27900,stock:{"U":58}}
+    ],
+    ventas:[
+      {id:"v1",fecha:"2026-11-02",cliente:"Tienda El Paso",canal:"Mayorista",sku:"ZP-RUN-GR",talla:"40",qty:6,precio:165000,costo:96400},
+      {id:"v2",fecha:"2026-11-08",cliente:"Instagram",canal:"Detal",sku:"MB-URB-BK",talla:"U",qty:3,precio:89900,costo:38500},
+      {id:"v3",fecha:"2026-11-12",cliente:"WhatsApp",canal:"Detal",sku:"ZP-CNV-BK",talla:"38",qty:2,precio:129900,costo:61800},
+      {id:"v4",fecha:"2026-11-15",cliente:"Calzado Norte",canal:"Mayorista",sku:"GR-SNP-BK",talla:"U",qty:20,precio:28000,costo:11200},
+      {id:"v5",fecha:"2026-11-19",cliente:"Mercado Libre",canal:"Marketplace",sku:"CD-SPR-01",talla:"U",qty:12,precio:27900,costo:9800}
+    ],
+    draft:null
+  };
+}
+
+let S;
+function load(){try{const r=localStorage.getItem(KEY);S=r?JSON.parse(r):sample();}catch(e){S=sample();}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+load();
+
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const n=v=>{const x=parseFloat(String(v).replace(",","."));return isFinite(x)?x:0};
+const fmt=v=>new Intl.NumberFormat("es-CO",{maximumFractionDigits:0}).format(Math.round(v||0));
+const money=v=>"$ "+fmt(v);
+const usd=v=>"US$ "+new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(v||0);
+const uid=()=>Math.random().toString(36).slice(2,9);
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2200);}
+
+function parseTallas(s){const o={};String(s||"").split(",").forEach(p=>{const[k,v]=p.split(":").map(x=>x&&x.trim());if(k)o[k]=(o[k]||0)+Math.max(0,Math.round(n(v)));});return o;}
+const sumObj=o=>Object.values(o||{}).reduce((a,b)=>a+b,0);
+const tallasStr=o=>Object.entries(o).map(([k,v])=>k+":"+v).join(",");
+
+/* ---------- Motor de costo puesto ---------- */
+function calc(p){
+  const items=p.items.map(it=>{const q=sumObj(parseTallas(it.tallas));return {...it,qty:q,fobTot:q*n(it.fob)}});
+  const fob=items.reduce((a,i)=>a+i.fobTot,0);
+  const inclFlete=p.incoterm==="CIF"||p.incoterm==="DDP";
+  const flete=inclFlete?0:n(p.flete), seguro=inclFlete?0:n(p.seguro);
+  const tc=n(p.tc)||S.cfg.trm;
+  const exw=p.incoterm==="EXW"?n(p.otrosOrigen||0):0;
+  const cifUsd=fob+flete+seguro+exw;
+  const base=cifUsd*tc;
+  const arancel=p.incoterm==="DDP"?0:base*n(p.arancel)/100;
+  const iva=p.incoterm==="DDP"?0:(base+arancel)*n(p.iva)/100;
+  const ivaCosto=S.cfg.ivaDescontable?0:iva;
+  const locales=n(p.agente)+n(p.fleteLocal)+n(p.otros);
+  const total=base+arancel+ivaCosto+locales;
+  const fobLocal=fob*tc;
+  const factor=fobLocal?total/fobLocal:0;
+  const m=S.cfg.margen/100;
+  items.forEach(i=>{i.unit=n(i.fob)*tc*factor;i.precio=m<1?i.unit/(1-m):i.unit;i.mayor=m<1?i.unit/(1-m*0.6):i.unit;});
+  const units=items.reduce((a,i)=>a+i.qty,0);
+  return {items,fob,flete,seguro,cifUsd,tc,base,fobLocal,arancel,iva,ivaCosto,locales,total,factor,units,
+          parts:[["Mercancía (FOB)",fobLocal,"var(--steel)"],["Flete + seguro",(flete+seguro+exw)*tc,"#5f8fb0"],["Arancel",arancel,"var(--accent)"],["IVA no descontable",ivaCosto,"var(--warn)"],["Gastos locales",locales,"var(--muted)"]]};
+}
+
+/* ---------- Vistas ---------- */
+const V={};
+V.resumen=()=>{
+  const inv=S.inventario.reduce((a,p)=>a+sumObj(p.stock)*p.costo,0);
+  const transito=S.pedidos.filter(p=>p.estado<5).map(calc).reduce((a,c)=>a+c.total,0);
+  const mes=new Date().toISOString().slice(0,7);
+  const vm=S.ventas.filter(v=>v.fecha.slice(0,7)===mes);
+  const vtas=vm.reduce((a,v)=>a+v.qty*v.precio,0), util=vm.reduce((a,v)=>a+v.qty*(v.precio-v.costo),0);
+  const low=[];S.inventario.forEach(p=>Object.entries(p.stock).forEach(([t,q])=>{if(q<=S.cfg.minStock)low.push({p,t,q});}));
+  const cnt=ESTADOS.map((_,i)=>S.pedidos.filter(p=>p.estado===i).length);
+  const bySku={};S.ventas.forEach(v=>{bySku[v.sku]=(bySku[v.sku]||0)+v.qty*v.precio;});
+  const top=Object.entries(bySku).sort((a,b)=>b[1]-a[1]).slice(0,5);const mx=top[0]?top[0][1]:1;
+  const name=s=>(S.inventario.find(p=>p.sku===s)||{}).nombre||s;
+  return `<div class="head"><div><div class="eyebrow">${esc(S.cfg.empresa)} · ${new Date().toLocaleDateString("es-CO",{month:"long",year:"numeric"})}</div><h1>Resumen del negocio</h1>
+  <p class="lead">Cuánto dinero tienes en el mar, cuánto en bodega y cuánto te está dejando cada venta.</p></div>
+  <div class="row"><a class="btn pri" href="#cotizador">Nueva importación</a><a class="btn" href="#ventas">Registrar venta</a></div></div>
+  ${S.demo?`<p class="notice" style="margin:0 0 16px">Estás viendo datos de ejemplo. Bórralos en <a href="#ajustes">Ajustes</a> para empezar con los tuyos.</p>`:""}
+  <div class="grid g4">
+    <div class="panel kpi"><div class="eyebrow">Capital en tránsito</div><div class="v">${money(transito)}</div><div class="s">${S.pedidos.filter(p=>p.estado<5).length} importaciones abiertas</div></div>
+    <div class="panel kpi"><div class="eyebrow">Inventario a costo puesto</div><div class="v">${money(inv)}</div><div class="s">${fmt(S.inventario.reduce((a,p)=>a+sumObj(p.stock),0))} unidades</div></div>
+    <div class="panel kpi"><div class="eyebrow">Ventas del mes</div><div class="v">${money(vtas)}</div><div class="s">${vm.length} ventas registradas</div></div>
+    <div class="panel kpi"><div class="eyebrow">Utilidad bruta del mes</div><div class="v" style="color:var(--ok)">${money(util)}</div><div class="s">Margen ${vtas?Math.round(util/vtas*100):0}%</div></div>
+  </div>
+  <div class="panel" style="margin-top:16px"><h2>Ruta de tus importaciones</h2>
+    <div class="pipe">${ESTADOS.map((e,i)=>`<div class="st-${i}"><b>${cnt[i]}</b><span>${e}</span></div>`).join("")}</div></div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="panel"><h2>Para reponer</h2>${low.length?`<div class="tw"><table><thead><tr><th>Producto</th><th>Talla</th><th class="num">Quedan</th></tr></thead><tbody>
+      ${low.slice(0,8).map(l=>`<tr><td>${esc(l.p.nombre)} <span class="mono muted">${esc(l.p.sku)}</span></td><td class="mono">${esc(l.t)}</td><td class="num low">${l.q}</td></tr>`).join("")}</tbody></table></div>`:`<p class="muted">Todo el stock está por encima de ${S.cfg.minStock} unidades.</p>`}</div>
+    <div class="panel"><h2>Lo que más vende</h2><div class="bars">${top.map(([s,v])=>`<div class="b"><span class="mono">${esc(s)}</span><div class="t" title="${esc(name(s))}"><span style="width:${v/mx*100}%"></span></div><span class="num">${money(v)}</span></div>`).join("")||'<p class="muted">Aún no hay ventas.</p>'}</div></div>
+  </div>`;
+};
+
+function blankPedido(){return {id:uid(),codigo:"IMP-"+new Date().toISOString().slice(2,7).replace("-","")+"-"+String(S.pedidos.length+1).padStart(2,"0"),proveedor:"",incoterm:"FOB",estado:0,eta:"",tracking:"",tc:S.cfg.trm,arancel:S.cfg.arancel,iva:S.cfg.iva,flete:0,seguro:0,agente:0,fleteLocal:0,otros:0,items:[{sku:"",nombre:"",cat:"Accesorios",fob:0,tallas:"U:100"}]};}
+
+V.cotizador=()=>{
+  if(!S.draft)S.draft=blankPedido();
+  const p=S.draft,c=calc(p);
+  const f=(k,l,step="any",hint="")=>`<label for="d-${k}">${l}<input id="d-${k}" data-k="${k}" type="number" step="${step}" value="${esc(p[k])}">${hint?`<span class="muted" style="font-weight:400">${hint}</span>`:""}</label>`;
+  const incl=p.incoterm==="CIF"||p.incoterm==="DDP";
+  return `<div class="head"><div><div class="eyebrow">Cotizador · ${esc(p.codigo)}</div><h1>¿Cuánto te cuesta puesto en bodega?</h1>
+  <p class="lead">Escribe el precio del proveedor y los gastos. El sistema reparte flete, arancel y gastos entre cada producto según su valor y te sugiere el precio de venta.</p></div></div>
+  <div class="grid g2">
+   <div class="stack">
+    <div class="panel"><h2>Proveedor y condiciones</h2><div class="form">
+      <label for="d-proveedor">Proveedor<input id="d-proveedor" data-k="proveedor" data-t="s" value="${esc(p.proveedor)}" placeholder="Ej. Guangzhou Shoes Co."></label>
+      <label for="d-incoterm">Incoterm<select id="d-incoterm" data-k="incoterm" data-t="s">${["EXW","FOB","CIF","DDP"].map(x=>`<option ${x===p.incoterm?"selected":""}>${x}</option>`).join("")}</select></label>
+      ${f("tc","Tasa de cambio (COP por USD)")}
+      ${f("arancel","Arancel %","any","Según partida arancelaria")}
+      ${f("iva","IVA importación %")}
+    </div></div>
+    <div class="panel"><div class="row" style="justify-content:space-between;margin-bottom:10px"><h2>Productos</h2><button class="btn sm" id="addItem">+ Producto</button></div>
+      <div class="tw"><table class="items"><thead><tr><th>SKU</th><th>Producto</th><th>Categoría</th><th>FOB US$</th><th>Tallas:cantidad</th><th class="num">Uds</th><th></th></tr></thead><tbody>
+      ${p.items.map((it,i)=>`<tr>
+        <td style="min-width:100px"><input id="it-${i}-sku" data-i="${i}" data-f="sku" value="${esc(it.sku)}" placeholder="ZP-001"></td>
+        <td style="min-width:170px"><input id="it-${i}-nombre" data-i="${i}" data-f="nombre" value="${esc(it.nombre)}" placeholder="Nombre"></td>
+        <td style="min-width:120px"><select id="it-${i}-cat" data-i="${i}" data-f="cat">${CATS.map(x=>`<option ${x===it.cat?"selected":""}>${x}</option>`).join("")}</select></td>
+        <td style="min-width:80px"><input id="it-${i}-fob" data-i="${i}" data-f="fob" type="number" step="any" value="${esc(it.fob)}"></td>
+        <td style="min-width:190px"><input id="it-${i}-tallas" data-i="${i}" data-f="tallas" value="${esc(it.tallas)}" placeholder="38:10,39:12 o U:200"></td>
+        <td class="num">${fmt(c.items[i].qty)}</td>
+        <td><button class="btn sm ghost" data-del="${i}" aria-label="Quitar producto">✕</button></td></tr>`).join("")}
+      </tbody></table></div>
+      <p class="muted" style="font-size:12.5px;margin:10px 0 0">Zapatillas: escribe la curva de tallas, por ejemplo <span class="mono">38:10,39:15,40:20</span>. Accesorios sin talla: <span class="mono">U:200</span>.</p></div>
+    <div class="panel"><h2>Gastos de la importación</h2><div class="form">
+      ${incl?`<p class="notice" style="grid-column:1/-1;margin:0">Con ${p.incoterm} el flete y el seguro internacional ya vienen en el precio del proveedor.${p.incoterm==="DDP"?" El proveedor también paga arancel e IVA.":""}</p>`:f("flete","Flete internacional US$")+f("seguro","Seguro US$","any","Suele ser 0,3–0,5% del FOB")}
+      ${f("agente","Agencia de aduana COP")}
+      ${f("fleteLocal","Flete puerto → bodega COP")}
+      ${f("otros","Otros (bodegaje, bancos) COP")}
+    </div></div>
+   </div>
+   <div class="stack">
+    <div class="panel" style="position:sticky;top:calc(env(safe-area-inset-top,0px) + 72px)">
+      <div class="row" style="justify-content:space-between"><h2>Costo total puesto</h2><span class="factor" title="Por cada peso de mercancía pagas esto puesto en bodega">factor ×${c.factor.toFixed(3)}</span></div>
+      <div class="breakdown">${c.parts.map(([l,v,col])=>v>0?`<span style="width:${v/c.total*100}%;background:${col}" title="${l}"></span>`:"").join("")}</div>
+      <div class="legend">${c.parts.map(([l,v,col])=>`<i style="background:${col}"></i><span>${l}</span><span class="num">${money(v)}</span>`).join("")}</div>
+      <div class="legend muted" style="margin-top:8px;font-size:12px"><span></span><span>Valor CIF en aduana</span><span class="num">${usd(c.cifUsd)}</span>
+        ${S.cfg.ivaDescontable?`<span></span><span>IVA pagado en aduana (descontable)</span><span class="num">${money(c.iva)}</span>`:""}</div>
+      <div class="total"><span>Total · ${fmt(c.units)} uds</span><span class="num">${money(c.total)}</span></div>
+    </div>
+    <div class="panel"><h2>Costo y precio por unidad</h2><div class="tw"><table><thead><tr><th>Producto</th><th class="num">Costo puesto</th><th class="num">Mayorista</th><th class="num">Detal</th></tr></thead><tbody>
+      ${c.items.map(i=>`<tr><td>${esc(i.nombre||i.sku||"Sin nombre")}<div class="mono muted">${esc(i.sku)}</div></td><td class="num">${money(i.unit)}</td><td class="num">${money(i.mayor)}</td><td class="num"><b>${money(i.precio)}</b></td></tr>`).join("")}
+      </tbody></table></div>
+      <p class="muted" style="font-size:12.5px;margin:10px 0 0">Detal con margen de ${S.cfg.margen}% sobre el precio. Mayorista con ${Math.round(S.cfg.margen*0.6)}%. Cámbialo en Ajustes.</p>
+      <div class="row" style="margin-top:14px"><button class="btn pri" id="saveDraft">Guardar como importación</button><button class="btn" id="resetDraft">Empezar de cero</button></div>
+    </div>
+   </div>
+  </div>`;
+};
+
+V.pedidos=()=>{
+  const rows=S.pedidos.map(p=>{const c=calc(p);return `<tr>
+    <td><b class="mono">${esc(p.codigo)}</b><div class="muted" style="font-size:12.5px">${esc(p.proveedor)} · ${esc(p.incoterm)}</div></td>
+    <td><select id="st-${p.id}" data-st="${p.id}" aria-label="Estado de ${esc(p.codigo)}" ${p.estado===5?"disabled":""}>${ESTADOS.map((e,i)=>`<option value="${i}" ${i===p.estado?"selected":""}>${e}</option>`).join("")}</select></td>
+    <td class="mono">${esc(p.eta||"—")}<div class="muted">${esc(p.tracking)}</div></td>
+    <td class="num">${fmt(c.units)}</td><td class="num">${usd(c.fob)}</td><td class="num"><b>${money(c.total)}</b></td>
+    <td><div class="row"><button class="btn sm" data-edit="${p.id}">Abrir</button>${p.estado<5?`<button class="btn sm" data-recv="${p.id}">Recibir en bodega</button>`:'<span class="pill st-5">Recibido</span>'}</div></td></tr>`}).join("");
+  return `<div class="head"><div><div class="eyebrow">Importaciones</div><h1>Pedidos en curso</h1><p class="lead">Sigue cada pedido desde que lo pagas hasta que llega a bodega. Al recibirlo, el inventario se carga solo con su costo puesto.</p></div>
+  <a class="btn pri" href="#cotizador" id="newPed">Nueva importación</a></div>
+  <div class="panel tw"><table><thead><tr><th>Pedido</th><th>Estado</th><th>Llegada · Contenedor</th><th class="num">Uds</th><th class="num">FOB</th><th class="num">Costo puesto</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="7" class="muted">No hay importaciones. Crea la primera en el cotizador.</td></tr>'}</tbody></table></div>`;
+};
+
+V.inventario=()=>{
+  const q=(V.inventario.q||"").toLowerCase();
+  const list=S.inventario.filter(p=>!q||(p.nombre+p.sku+p.cat).toLowerCase().includes(q));
+  return `<div class="head"><div><div class="eyebrow">Inventario</div><h1>Bodega</h1><p class="lead">Existencias por talla con su costo real puesto. En rojo, lo que está por agotarse.</p></div>
+  <label for="invq" style="min-width:220px">Buscar<input id="invq" value="${esc(V.inventario.q||"")}" placeholder="SKU, nombre o categoría"></label></div>
+  <div class="panel tw"><table><thead><tr><th>Producto</th><th>Tallas</th><th class="num">Total</th><th class="num">Costo puesto</th><th class="num">Precio venta</th><th class="num">Margen</th></tr></thead><tbody>
+  ${list.map(p=>{const t=sumObj(p.stock),mg=p.precio?(p.precio-p.costo)/p.precio*100:0;return `<tr>
+    <td>${esc(p.nombre)}<div class="mono muted">${esc(p.sku)} · ${esc(p.cat)}</div></td>
+    <td><div class="sizes">${Object.entries(p.stock).map(([k,v])=>`<span class="${v===0?"z":""}" ${v>0&&v<=S.cfg.minStock?'style="color:var(--bad)"':""}>${esc(k)}·${v}</span>`).join("")}</div></td>
+    <td class="num ${t<=S.cfg.minStock?"low":""}">${fmt(t)}</td><td class="num">${money(p.costo)}</td>
+    <td class="num"><input id="pr-${esc(p.sku)}" data-price="${esc(p.sku)}" type="number" value="${Math.round(p.precio)}" style="width:110px;text-align:right" aria-label="Precio de ${esc(p.nombre)}"></td>
+    <td class="num" style="color:${mg<25?"var(--bad)":mg<35?"var(--warn)":"var(--ok)"}">${Math.round(mg)}%</td></tr>`}).join("")||'<tr><td colspan="6" class="muted">Sin productos. Recibe una importación para cargar el inventario.</td></tr>'}
+  </tbody></table></div>`;
+};
+
+V.ventas=()=>{
+  const opts=S.inventario.map(p=>`<option value="${esc(p.sku)}">${esc(p.nombre)} (${esc(p.sku)})</option>`).join("");
+  const sel=S.inventario[0];
+  const tl=sel?Object.keys(sel.stock):[];
+  const tot=S.ventas.reduce((a,v)=>a+v.qty*v.precio,0),ut=S.ventas.reduce((a,v)=>a+v.qty*(v.precio-v.costo),0);
+  return `<div class="head"><div><div class="eyebrow">Ventas</div><h1>Registrar y medir ventas</h1><p class="lead">Cada venta descuenta la talla del inventario y calcula la utilidad con el costo puesto real.</p></div></div>
+  <div class="panel"><h2>Nueva venta</h2><form id="vform" class="form">
+    <label for="v-sku">Producto<select id="v-sku" required>${opts}</select></label>
+    <label for="v-talla">Talla<select id="v-talla">${tl.map(t=>`<option>${esc(t)}</option>`).join("")}</select></label>
+    <label for="v-qty">Cantidad<input id="v-qty" type="number" min="1" value="1" required></label>
+    <label for="v-precio">Precio unitario<input id="v-precio" type="number" value="${sel?Math.round(sel.precio):0}" required></label>
+    <label for="v-canal">Canal<select id="v-canal"><option>Detal</option><option>Mayorista</option><option>Marketplace</option></select></label>
+    <label for="v-cliente">Cliente<input id="v-cliente" placeholder="Nombre o tienda"></label>
+    <div style="display:flex;align-items:flex-end"><button class="btn pri" type="submit" style="width:100%">Registrar venta</button></div>
+  </form></div>
+  <div class="panel tw" style="margin-top:16px"><div class="row" style="justify-content:space-between;margin-bottom:8px"><h2>Historial</h2><span class="muted">Vendido ${money(tot)} · Utilidad <b style="color:var(--ok)">${money(ut)}</b></span></div>
+  <table><thead><tr><th>Fecha</th><th>Cliente</th><th>Canal</th><th>Producto</th><th class="num">Uds</th><th class="num">Total</th><th class="num">Utilidad</th></tr></thead><tbody>
+  ${S.ventas.slice().reverse().map(v=>`<tr><td class="mono">${esc(v.fecha)}</td><td>${esc(v.cliente)}</td><td>${esc(v.canal)}</td><td class="mono">${esc(v.sku)} · ${esc(v.talla)}</td><td class="num">${v.qty}</td><td class="num">${money(v.qty*v.precio)}</td><td class="num" style="color:var(--ok)">${money(v.qty*(v.precio-v.costo))}</td></tr>`).join("")}
+  </tbody></table></div>`;
+};
+
+function catalogText(){
+  const by={};S.inventario.forEach(p=>{const av=Object.entries(p.stock).filter(([,v])=>v>0).map(([k])=>k);if(!av.length)return;(by[p.cat]=by[p.cat]||[]).push({p,av});});
+  let t=`*${S.cfg.empresa}* · Catálogo disponible\n`;
+  Object.entries(by).forEach(([c,arr])=>{t+=`\n*${c.toUpperCase()}*\n`;arr.forEach(({p,av})=>{t+=`• ${p.nombre} — ${money(p.precio)}${av[0]!=="U"?`\n   Tallas: ${av.join(", ")}`:""}\n`;});});
+  t+=`\nPedidos por WhatsApp: ${S.cfg.whatsapp}\nPrecios mayoristas desde 6 unidades.`;
+  return t;
+}
+V.catalogo=()=>`<div class="head"><div><div class="eyebrow">Catálogo</div><h1>Catálogo para WhatsApp</h1><p class="lead">Se arma solo con lo que hay en bodega, con precios y tallas disponibles. Cópialo y pégalo en tu estado, grupo o lista de difusión.</p></div>
+  <button class="btn pri" id="copyCat">Copiar catálogo</button></div>
+  <div class="panel"><textarea id="cat" readonly aria-label="Texto del catálogo">${esc(catalogText())}</textarea></div>`;
+
+V.ajustes=()=>`<div class="head"><div><div class="eyebrow">Ajustes</div><h1>Datos de tu empresa</h1><p class="lead">Estos valores se usan por defecto en cada cotización nueva.</p></div></div>
+  <div class="panel"><div class="form">
+    <label for="c-empresa">Nombre de la empresa<input id="c-empresa" data-c="empresa" data-t="s" value="${esc(S.cfg.empresa)}"></label>
+    <label for="c-whatsapp">WhatsApp de ventas<input id="c-whatsapp" data-c="whatsapp" data-t="s" value="${esc(S.cfg.whatsapp)}"></label>
+    <label for="c-trm">Tasa de cambio (COP por USD)<input id="c-trm" data-c="trm" type="number" value="${S.cfg.trm}"></label>
+    <label for="c-arancel">Arancel por defecto %<input id="c-arancel" data-c="arancel" type="number" value="${S.cfg.arancel}"></label>
+    <label for="c-iva">IVA importación %<input id="c-iva" data-c="iva" type="number" value="${S.cfg.iva}"></label>
+    <label for="c-margen">Margen detal objetivo %<input id="c-margen" data-c="margen" type="number" value="${S.cfg.margen}"></label>
+    <label for="c-minStock">Alerta de stock bajo (uds)<input id="c-minStock" data-c="minStock" type="number" value="${S.cfg.minStock}"></label>
+    <label for="c-ivaDescontable">IVA de importación<select id="c-ivaDescontable" data-c="ivaDescontable" data-t="b"><option value="1" ${S.cfg.ivaDescontable?"selected":""}>Lo descuento (responsable de IVA)</option><option value="0" ${S.cfg.ivaDescontable?"":"selected"}>Es costo (no responsable)</option></select></label>
+  </div><p class="notice" style="margin:14px 0 0">Verifica la tasa de cambio del día y el arancel exacto de tu partida con tu agencia de aduanas antes de cerrar un precio.</p></div>
+  <div class="panel" style="margin-top:16px"><h2>Copia de seguridad</h2><p class="muted" style="margin-top:0">Tus datos se guardan en este navegador. Copia el respaldo y guárdalo; pégalo aquí para restaurarlo en otro equipo.</p>
+    <textarea id="bk" aria-label="Respaldo">${esc(JSON.stringify({...S,draft:null}))}</textarea>
+    <div class="row" style="margin-top:10px"><button class="btn" id="copyBk">Copiar respaldo</button><button class="btn" id="restore">Restaurar desde el texto</button>
+    <span id="wipeBox"><button class="btn" id="wipe">Borrar todo y empezar</button></span><button class="btn ghost" id="demo">Cargar datos de ejemplo</button></div></div>`;
+
+/* ---------- Router ---------- */
+const ROUTES=Object.keys(V);
+function render(){
+  const r=ROUTES.includes(location.hash.slice(1))?location.hash.slice(1):"resumen";
+  document.querySelectorAll("#tabs a").forEach(a=>{if(a.getAttribute("href")==="#"+r)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current");});
+  const app=$("#app");app.innerHTML=`<div class="view">${V[r]()}</div>`;
+}
+function rerenderKeepFocus(){const id=document.activeElement&&document.activeElement.id;const pos=document.activeElement&&document.activeElement.selectionStart;render();if(id){const el=document.getElementById(id);if(el){el.focus();try{if(pos!=null)el.setSelectionRange(pos,pos);}catch(e){}}}}
+window.addEventListener("hashchange",()=>{render();window.scrollTo(0,0);});
+
+/* ---------- Eventos ---------- */
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.k&&S.draft){S.draft[t.dataset.k]=t.dataset.t==="s"?t.value:t.value;save();if(t.tagName!=="SELECT")rerenderKeepFocus();}
+  else if(t.dataset.f!=null&&S.draft){S.draft.items[+t.dataset.i][t.dataset.f]=t.value;save();if(t.tagName!=="SELECT")rerenderKeepFocus();}
+  else if(t.id==="invq"){V.inventario.q=t.value;rerenderKeepFocus();}
+  else if(t.dataset.c&&t.tagName!=="SELECT"){S.cfg[t.dataset.c]=t.dataset.t==="s"?t.value:n(t.value);save();}
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.k&&t.tagName==="SELECT"){S.draft[t.dataset.k]=t.value;save();render();}
+  else if(t.dataset.f!=null&&t.tagName==="SELECT"){S.draft.items[+t.dataset.i][t.dataset.f]=t.value;save();}
+  else if(t.dataset.c&&t.tagName==="SELECT"){S.cfg[t.dataset.c]=t.value==="1";save();toast("Ajuste guardado");}
+  else if(t.dataset.c){toast("Ajuste guardado");}
+  else if(t.dataset.st){const p=S.pedidos.find(x=>x.id===t.dataset.st);const v=+t.value;if(v===5){receive(p);}else{p.estado=v;save();toast(`${p.codigo}: ${ESTADOS[v]}`);}render();}
+  else if(t.dataset.price){const p=S.inventario.find(x=>x.sku===t.dataset.price);p.precio=n(t.value);save();render();toast("Precio actualizado");}
+  else if(t.id==="v-sku"){const p=S.inventario.find(x=>x.sku===t.value);$("#v-talla").innerHTML=Object.keys(p.stock).map(k=>`<option>${esc(k)}</option>`).join("");$("#v-precio").value=Math.round(p.precio);}
+});
+function receive(p){
+  const c=calc(p);
+  c.items.forEach(i=>{
+    const sku=i.sku||("SKU-"+uid());const add=parseTallas(i.tallas);
+    let inv=S.inventario.find(x=>x.sku===sku);
+    if(!inv){inv={sku,nombre:i.nombre||sku,cat:i.cat,costo:i.unit,precio:Math.round(i.precio/100)*100,stock:{}};S.inventario.push(inv);}
+    else{const old=sumObj(inv.stock),nw=sumObj(add);inv.costo=(inv.costo*old+i.unit*nw)/((old+nw)||1);}
+    Object.entries(add).forEach(([k,v])=>inv.stock[k]=(inv.stock[k]||0)+v);
+  });
+  p.estado=5;save();toast(`${p.codigo} recibido: ${fmt(c.units)} unidades cargadas al inventario`);
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,a");if(!t)return;
+  if(t.id==="addItem"){S.draft.items.push({sku:"",nombre:"",cat:"Accesorios",fob:0,tallas:"U:100"});save();render();}
+  else if(t.dataset.del!=null){S.draft.items.splice(+t.dataset.del,1);if(!S.draft.items.length)S.draft.items.push({sku:"",nombre:"",cat:"Accesorios",fob:0,tallas:"U:100"});save();render();}
+  else if(t.id==="saveDraft"){const d=S.draft;const i=S.pedidos.findIndex(x=>x.id===d.id);if(i>=0)S.pedidos[i]=d;else S.pedidos.unshift(d);S.draft=null;save();toast("Importación guardada");location.hash="pedidos";}
+  else if(t.id==="resetDraft"){S.draft=blankPedido();save();render();}
+  else if(t.id==="newPed"){S.draft=blankPedido();save();}
+  else if(t.dataset.edit){S.draft=JSON.parse(JSON.stringify(S.pedidos.find(x=>x.id===t.dataset.edit)));save();location.hash="cotizador";}
+  else if(t.dataset.recv){receive(S.pedidos.find(x=>x.id===t.dataset.recv));render();}
+  else if(t.id==="copyCat"){copy($("#cat"),"Catálogo copiado");}
+  else if(t.id==="copyBk"){copy($("#bk"),"Respaldo copiado");}
+  else if(t.id==="restore"){try{const d=JSON.parse($("#bk").value);if(!d.cfg||!d.inventario)throw 0;S=d;save();toast("Datos restaurados");render();}catch(err){toast("El texto no es un respaldo válido. Pega el respaldo completo.");}}
+  else if(t.id==="wipe"){$("#wipeBox").innerHTML='<span class="confirm">¿Seguro? Se borra todo. <button class="btn sm" id="wipeYes" style="color:var(--bad)">Sí, borrar</button><button class="btn sm ghost" id="wipeNo">Cancelar</button></span>';}
+  else if(t.id==="wipeNo"){render();}
+  else if(t.id==="wipeYes"){const cfg={...S.cfg};S={demo:false,cfg,pedidos:[],inventario:[],ventas:[],draft:null};save();toast("Listo. Empieza con tu primera importación");location.hash="cotizador";render();}
+  else if(t.id==="demo"){S=sample();save();toast("Datos de ejemplo cargados");location.hash="resumen";render();}
+});
+document.addEventListener("submit",e=>{
+  if(e.target.id!=="vform")return;e.preventDefault();
+  const sku=$("#v-sku").value,talla=$("#v-talla").value,qty=Math.max(1,Math.round(n($("#v-qty").value)));
+  const p=S.inventario.find(x=>x.sku===sku);if(!p)return;
+  if((p.stock[talla]||0)<qty){toast(`Solo hay ${p.stock[talla]||0} unidades en talla ${talla}`);return;}
+  p.stock[talla]-=qty;
+  S.ventas.push({id:uid(),fecha:new Date().toISOString().slice(0,10),cliente:$("#v-cliente").value||"Cliente",canal:$("#v-canal").value,sku,talla,qty,precio:n($("#v-precio").value),costo:p.costo});
+  save();toast("Venta registrada");render();
+});
+function copy(el,msg){const ok=()=>toast(msg);try{navigator.clipboard.writeText(el.value).then(ok,()=>{el.select();toast("Texto seleccionado. Cópialo con Ctrl+C");});}catch(err){el.select();toast("Texto seleccionado. Cópialo con Ctrl+C");}}
+
+render();
+})();
+</script>
+</body>
+</html>
